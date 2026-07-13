@@ -17,7 +17,7 @@ public class ResetPasswordRequest {
     private String newPassword;
 
     @NotBlank(message = "New OTP is required.")
-    private String otp;
+    private String resetPasswordOTP;
 
     @Email @NotBlank(message = "Email is required.")
     private String email;

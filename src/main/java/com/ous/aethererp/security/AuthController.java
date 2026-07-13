@@ -19,7 +19,7 @@ import org.springframework.security.core.annotation.CurrentSecurityContext;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-
+import org.springframework.security.core.Authentication;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -80,7 +80,7 @@ public class AuthController {
     @PostMapping("/send-reset-otp")
     public void sendResetOTP(@RequestParam String email){
         try {
-            profileService.sendResetOTP(email);
+            profileService.resetPasswordOTP(email);
         } catch (Exception e){
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -91,7 +91,7 @@ public class AuthController {
             @Valid @RequestBody ResetPasswordRequest request){
         try{
             profileService.resetPassword(request.getEmail(),
-                    request.getOtp(), request.getNewPassword());
+                    request.getResetPasswordOTP(), request.getNewPassword());
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -108,17 +108,23 @@ public class AuthController {
         }
     }
 
+
     @PostMapping("/verify-otp")
-    public void verifyEmail(@RequestBody Map<String, Object> request,
-                            @CurrentSecurityContext(expression = "authentication.name") String email){
+    public ResponseEntity<?> verifyEmail(
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
 
-
-        try{
-            profileService.verifyOTP(email, request.get("otp").toString());
-        } catch (Exception e){
-            throw new ResponseStatusException(INTERNAL_SERVER_ERROR, e.getMessage());
+        System.out.println(authentication);
+        if(authentication == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("User is not authenticated.");
         }
+
+        String email = authentication.getName();
+        profileService.verifyOTP(email, request.get("otp").toString());
+        return ResponseEntity.ok().build();
     }
+
 
     private void authenticate(String email, String password) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
@@ -134,10 +140,11 @@ public class AuthController {
                 .maxAge(0)
                 .sameSite("Strict")
                 .build();
-        log.info("Logging out successfully!!");
+        log.info("Logging out successful!!");
         return ResponseEntity.ok()
                 .header(HttpHeaders.COOKIE, cookie.toString())
                 .body("Logged out successfully");
     }
 
 }
+

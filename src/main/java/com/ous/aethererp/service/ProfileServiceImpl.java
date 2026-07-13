@@ -43,7 +43,7 @@ public class ProfileServiceImpl implements ProfileService{
     }
 
     @Override
-    public void sendResetOTP(String email) {
+    public void resetPasswordOTP(String email) {
         UserEntity existingUserByEmail = userRepo.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User Not Found " + email));
 
@@ -55,8 +55,8 @@ public class ProfileServiceImpl implements ProfileService{
         long expiryTime = System.currentTimeMillis() + (15 * 60 * 1000);
 
         // Update the profile / user
-        existingUserByEmail.setResetOTP(otp);
-        existingUserByEmail.setResetOTPExpiredAt(expiryTime);
+        existingUserByEmail.setResetPasswordOTP(otp);
+        existingUserByEmail.setResetPasswordOTPExpiredAt(expiryTime);
 
         // Save the data into the database
         userRepo.save(existingUserByEmail);
@@ -74,17 +74,17 @@ public class ProfileServiceImpl implements ProfileService{
                .orElseThrow(() -> new UsernameNotFoundException("User email not found: " + email));
 
        // Check if the otp is null or the existing otp is not equal to the provided one
-        if (existingUser.getResetOTP() == null || !existingUser.getResetOTP().equals(otp)){
+        if (existingUser.getResetPasswordOTP() == null || !existingUser.getResetPasswordOTP().equals(otp)){
             throw new RuntimeException("Invalid OTP");
         }
 
-        if (existingUser.getResetOTPExpiredAt() < System.currentTimeMillis()){
+        if (existingUser.getResetPasswordOTPExpiredAt() < System.currentTimeMillis()){
             throw new RuntimeException("OTP Expired.");
         }
 
         existingUser.setPassword(passwordEncoder.encode(newPassword));
-        existingUser.setResetOTP(null);
-        existingUser.setResetOTPExpiredAt(0L);
+        existingUser.setResetPasswordOTP(null);
+        existingUser.setResetPasswordOTPExpiredAt(0L);
 
         // resave user back to the database
         userRepo.save(existingUser);
@@ -122,20 +122,25 @@ public class ProfileServiceImpl implements ProfileService{
 
     @Override
     public void verifyOTP(String email, String otp) {
-        UserEntity existingUser = userRepo.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
-        if (existingUser.getVerifyOTP() == null || !existingUser.getVerifyOTP().equals(otp)){
+        UserEntity existingUser = userRepo.findByEmail(email)
+                .orElseThrow(() ->
+                        new UsernameNotFoundException("User not found: " + email));
+
+        if (existingUser.getVerifyOTP() == null ||
+                !existingUser.getVerifyOTP().equals(otp)) {
+
             throw new RuntimeException("Invalid OTP");
         }
 
-        if (existingUser.getResetOTPExpiredAt() < System.currentTimeMillis()){
+        if (existingUser.getVerifyExpiredAt() < System.currentTimeMillis()) {
             throw new RuntimeException("OTP Expired.");
         }
 
         existingUser.setIsAccountVerified(true);
         existingUser.setVerifyOTP(null);
         existingUser.setVerifyExpiredAt(0L);
+
         userRepo.save(existingUser);
     }
 
@@ -165,10 +170,10 @@ public class ProfileServiceImpl implements ProfileService{
                 .name(request.getName())
                 .password(passwordEncoder.encode(request.getPassword()))
                  .isAccountVerified(false)
-                 .resetOTPExpiredAt(0L)
+                 .resetPasswordOTPExpiredAt(0L)
                  .verifyOTP(null)
                  .verifyExpiredAt(0L)
-                 .resetOTP(null)
+                 .resetPasswordOTP(null)
                  .build();
     }
 }
