@@ -142,7 +142,7 @@ public class AuthController {
                 .build();
         log.info("Logging out successful!!");
         return ResponseEntity.ok()
-                .header(HttpHeaders.COOKIE, cookie.toString())
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
                 .body("Logged out successfully");
     }
 
