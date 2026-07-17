@@ -2,12 +2,13 @@ package com.ous.aethererp.entity;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.*;
 
 
+@Getter @Setter
 @Builder
 @AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "tbl_roles")
 public class RoleEntity {

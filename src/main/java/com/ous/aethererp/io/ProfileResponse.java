@@ -1,6 +1,7 @@
 package com.ous.aethererp.io;
 
 
+import com.ous.aethererp.entity.RoleEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,6 +18,7 @@ public class ProfileResponse {
     private String name;
     private String email;
     private Boolean isAccountVerified;
+
 }
 
 

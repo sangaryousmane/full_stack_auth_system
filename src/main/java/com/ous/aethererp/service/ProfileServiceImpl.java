@@ -1,9 +1,11 @@
 package com.ous.aethererp.service;
 
 
+import com.ous.aethererp.entity.RoleEntity;
 import com.ous.aethererp.entity.UserEntity;
 import com.ous.aethererp.io.ProfileRequest;
 import com.ous.aethererp.io.ProfileResponse;
+import com.ous.aethererp.repo.RoleRepository;
 import com.ous.aethererp.repo.UserEntityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,7 @@ public class ProfileServiceImpl implements ProfileService{
     private final UserEntityRepository userRepo;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final RoleRepository roleRepo;
 
 
     @Override
@@ -29,6 +32,10 @@ public class ProfileServiceImpl implements ProfileService{
 
         UserEntity userEntity= convertToUserEntity(request);
         if(!userRepo.existsByEmail(userEntity.getEmail())){
+            RoleEntity userRole = roleRepo.findByName("ROLE_USER")
+                    .orElseThrow(() ->
+                            new RuntimeException("ROLE_USER does not exist"));
+            userEntity.getRoles().add(userRole);
             userEntity = userRepo.save(userEntity);
             return convertToProfileResponse(userEntity);
         }
