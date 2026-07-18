@@ -6,21 +6,17 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Set;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ProfileResponse {
+public class RoleResponse {
 
-
-    private String userId;
     private String name;
-    private String email;
-    private Boolean isAccountVerified;
-    private Set<RoleResponse> roles;
+    private String roleId;
+    private Long id;
 
+    public RoleResponse(String name){
+        this.name = name;
+    }
 }
-
-

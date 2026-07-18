@@ -1,10 +1,12 @@
 package com.ous.aethererp.service;
 
 
+import com.ous.aethererp.RoleConstants;
 import com.ous.aethererp.entity.RoleEntity;
 import com.ous.aethererp.entity.UserEntity;
 import com.ous.aethererp.io.ProfileRequest;
 import com.ous.aethererp.io.ProfileResponse;
+import com.ous.aethererp.io.RoleResponse;
 import com.ous.aethererp.repo.RoleRepository;
 import com.ous.aethererp.repo.UserEntityRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,8 +15,12 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -30,16 +36,22 @@ public class ProfileServiceImpl implements ProfileService{
     @Override
     public ProfileResponse createProfile(ProfileRequest request) {
 
+        if (userRepo.existsByEmail(request.getEmail())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Email already exists."
+            );
+        }
+
         UserEntity userEntity= convertToUserEntity(request);
         if(!userRepo.existsByEmail(userEntity.getEmail())){
-            RoleEntity userRole = roleRepo.findByName("ROLE_USER")
+            RoleEntity userRole = roleRepo.findByName(RoleConstants.USER)
                     .orElseThrow(() ->
                             new RuntimeException("ROLE_USER does not exist"));
             userEntity.getRoles().add(userRole);
             userEntity = userRepo.save(userEntity);
             return convertToProfileResponse(userEntity);
         }
-        throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already exists.");
     }
 
     @Override
@@ -161,11 +173,19 @@ public class ProfileServiceImpl implements ProfileService{
 
     // TODO: This method takes a database entity and convert it back into a restful response to reduce load and frequent requests on the database.
     private ProfileResponse convertToProfileResponse(UserEntity newProfile) {
+        Set<RoleResponse> roles=newProfile.getRoles()
+                .stream()
+                .map(role -> RoleResponse.builder()
+                                .id(role.getId())
+                                .name(role.getName())
+                                .build())
+                .collect(Collectors.toSet());
         return ProfileResponse.builder()
                 .userId(newProfile.getUserId())
                 .name(newProfile.getName())
                 .email(newProfile.getEmail())
                 .isAccountVerified(newProfile.getIsAccountVerified())
+                .roles(roles)
                 .build();
     }
 
@@ -181,6 +201,7 @@ public class ProfileServiceImpl implements ProfileService{
                  .verifyOTP(null)
                  .verifyExpiredAt(0L)
                  .resetPasswordOTP(null)
+                 .roles(new HashSet<>())
                  .build();
     }
 }
