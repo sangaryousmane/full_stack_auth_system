@@ -7,13 +7,12 @@ import com.ous.aethererp.io.RoleResponse;
 import com.ous.aethererp.repo.RoleRepository;
 import com.ous.aethererp.repo.UserEntityRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.java.Log;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
+@Log
 @Service
 @RequiredArgsConstructor
 public class RoleServiceImpl implements RoleService {
@@ -31,22 +30,29 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public RoleResponse createRole(RoleRequest request) {
+        log.info("User Role with ID "+ request.getId()+" Created Successfully.");
+
         RoleEntity role = RoleEntity.builder()
                         .roleId(UUID.randomUUID().toString())
                         .name(request.getName())
                         .build();
         roleRepo.save(role);
+        log.info("User Role with ID "+ role.getId()+" Created Successfully.");
         return convertToRoleResponse(role);
     }
 
     @Override
-    public void deleteRole(RoleEntity role) {
-        if(role.getName().equals("ROLE_ADMIN")){
+    public void deleteRole(Long roleId) {
+        RoleEntity roleById = roleRepo.findById(roleId)
+                .orElseThrow(() -> new RoleNotFoundException("Role with ID" + roleId + " not found."));
+        if(roleById.getName().equals("ROLE_ADMIN")){
             throw new RoleNotFoundException(
                     "Cannot delete default role");
 
         }
-        roleRepo.deleteById(role.getId());
+        roleRepo.deleteById(roleById.getId());
+        log.warning("User Role with ID "+ roleById.getId()+" Deleted Successfully.");
+
     }
 
     @Override
@@ -58,11 +64,16 @@ public class RoleServiceImpl implements RoleService {
         for (String roleName: roleNames){
             RoleEntity role=roleRepo.findByName(roleName)
                     .orElseThrow(() -> new RuntimeException(roleName + "doesn't exist."));
+
+            log.info("Role " + role.getName()+
+                    " with User ID "+ user.getId()+" has been assign Successfully.");
+
             roles.add(role);
         }
 
         user.getRoles().addAll(roles);
         userRepo.save(user);
+
     }
 
     @Override
@@ -72,7 +83,7 @@ public class RoleServiceImpl implements RoleService {
         user.getRoles()
                 .removeIf(role -> role.getName().equalsIgnoreCase(roleName));
         userRepo.save(user);
-
+        log.warning("User Role with User ID "+ user.getId()+" has been remove Successfully.");
     }
 
     private RoleResponse convertToRoleResponse(RoleEntity role) {

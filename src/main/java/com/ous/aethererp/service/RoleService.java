@@ -12,7 +12,7 @@ public interface RoleService {
     List<RoleResponse> getAllRoles();
     RoleResponse createRole(RoleRequest request);
 
-    void deleteRole(RoleEntity role);
+    void deleteRole(Long roleId);
     void assignRolesToUser(Long userId, Set<String> roles);
     void removeRoleFromUser(Long userId, String roleName);
 }
