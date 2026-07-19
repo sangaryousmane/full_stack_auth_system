@@ -6,6 +6,7 @@ import com.ous.aethererp.io.AuthResponse;
 import com.ous.aethererp.io.ResetPasswordRequest;
 import com.ous.aethererp.service.ProfileService;
 import com.ous.aethererp.jwtUtils.JWTUtils;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -100,6 +101,7 @@ public class AuthController {
         }
     }
 
+    @SecurityRequirement(name = "Bearer Authentication")
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/send-otp")
     public void sendVerifyOTP(@CurrentSecurityContext(expression = "authentication?.name") String email){
@@ -112,6 +114,7 @@ public class AuthController {
     }
 
     @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyEmail(
             @RequestBody Map<String, Object> request,
@@ -133,6 +136,7 @@ public class AuthController {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
     }
 
+    @SecurityRequirement(name = "Bearer Authentication")
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response){

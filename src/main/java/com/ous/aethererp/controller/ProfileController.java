@@ -1,9 +1,11 @@
 package com.ous.aethererp.controller;
 
+import com.ous.aethererp.config.OpenApiConfig;
 import com.ous.aethererp.io.ProfileRequest;
 import com.ous.aethererp.io.ProfileResponse;
 import com.ous.aethererp.service.EmailService;
 import com.ous.aethererp.service.ProfileService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -29,6 +31,7 @@ public class ProfileController {
 
 
     @GetMapping("/profile")
+    @SecurityRequirement(name = "Bearer Authentication")
     public ProfileResponse getProfileDetails(
             @CurrentSecurityContext(expression = "authentication?.name") String email){
     return profileService.getProfile(email);

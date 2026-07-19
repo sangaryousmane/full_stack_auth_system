@@ -1,6 +1,7 @@
 package com.ous.aethererp.service;
 import com.ous.aethererp.entity.RoleEntity;
 import com.ous.aethererp.entity.UserEntity;
+import com.ous.aethererp.io.RoleNotFoundException;
 import com.ous.aethererp.io.RoleRequest;
 import com.ous.aethererp.io.RoleResponse;
 import com.ous.aethererp.repo.RoleRepository;
@@ -41,7 +42,7 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public void deleteRole(RoleEntity role) {
         if(role.getName().equals("ROLE_ADMIN")){
-            throw new RuntimeException(
+            throw new RoleNotFoundException(
                     "Cannot delete default role");
 
         }
@@ -60,7 +61,7 @@ public class RoleServiceImpl implements RoleService {
             roles.add(role);
         }
 
-        user.setRoles(roles);
+        user.getRoles().addAll(roles);
         userRepo.save(user);
     }
 
