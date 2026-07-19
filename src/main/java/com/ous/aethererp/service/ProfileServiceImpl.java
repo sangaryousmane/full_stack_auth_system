@@ -43,15 +43,17 @@ public class ProfileServiceImpl implements ProfileService{
             );
         }
 
-        UserEntity userEntity= convertToUserEntity(request);
-        if(!userRepo.existsByEmail(userEntity.getEmail())){
-            RoleEntity userRole = roleRepo.findByName(RoleConstants.USER)
-                    .orElseThrow(() ->
-                            new RuntimeException("ROLE_USER does not exist"));
-            userEntity.getRoles().add(userRole);
-            userEntity = userRepo.save(userEntity);
-            return convertToProfileResponse(userEntity);
-        }
+        UserEntity userEntity = convertToUserEntity(request);
+
+        RoleEntity defaultRole = roleRepo.findByName(RoleConstants.USER)
+                .orElseThrow(() ->
+                        new RuntimeException("Default role ROLE_USER not found."));
+
+        userEntity.getRoles().add(defaultRole);
+
+        userEntity = userRepo.save(userEntity);
+
+        return convertToProfileResponse(userEntity);
     }
 
     @Override
@@ -178,6 +180,7 @@ public class ProfileServiceImpl implements ProfileService{
                 .map(role -> RoleResponse.builder()
                                 .id(role.getId())
                                 .name(role.getName())
+                                .roleId(role.getRoleId())
                                 .build())
                 .collect(Collectors.toSet());
         return ProfileResponse.builder()

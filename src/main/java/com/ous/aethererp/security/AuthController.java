@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -70,13 +71,14 @@ public class AuthController {
             return ResponseEntity.status(UNAUTHORIZED).body(err);
         }
     }
-
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/is-authenticated")
     public ResponseEntity<Boolean> isAuthenticated(
             Authentication authentication){
         return ResponseEntity.ok(authentication != null && authentication.isAuthenticated());
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/send-reset-otp")
     public void sendResetOTP(@RequestParam String email){
         try {
@@ -85,6 +87,7 @@ public class AuthController {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
+
 
     @PostMapping("/reset-password")
     public void sendResetPassword(
@@ -97,7 +100,7 @@ public class AuthController {
         }
     }
 
-
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/send-otp")
     public void sendVerifyOTP(@CurrentSecurityContext(expression = "authentication?.name") String email){
 
@@ -108,7 +111,7 @@ public class AuthController {
         }
     }
 
-
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyEmail(
             @RequestBody Map<String, Object> request,
@@ -130,6 +133,7 @@ public class AuthController {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response){
         log.info("Logging out now.......");

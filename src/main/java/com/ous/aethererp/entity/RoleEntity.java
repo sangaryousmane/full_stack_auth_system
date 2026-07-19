@@ -4,6 +4,8 @@ package com.ous.aethererp.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
+
 
 @Getter @Setter
 @Builder
