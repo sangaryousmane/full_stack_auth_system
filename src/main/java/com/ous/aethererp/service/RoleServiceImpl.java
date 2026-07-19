@@ -1,7 +1,7 @@
 package com.ous.aethererp.service;
 import com.ous.aethererp.entity.RoleEntity;
 import com.ous.aethererp.entity.UserEntity;
-import com.ous.aethererp.io.RoleNotFoundException;
+import com.ous.aethererp.exceptions.RoleNotFoundException;
 import com.ous.aethererp.io.RoleRequest;
 import com.ous.aethererp.io.RoleResponse;
 import com.ous.aethererp.repo.RoleRepository;

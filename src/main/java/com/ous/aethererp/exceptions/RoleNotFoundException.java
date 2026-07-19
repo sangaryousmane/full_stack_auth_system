@@ -1,4 +1,4 @@
-package com.ous.aethererp.io;
+package com.ous.aethererp.exceptions;
 
 public class RoleNotFoundException extends RuntimeException {
 

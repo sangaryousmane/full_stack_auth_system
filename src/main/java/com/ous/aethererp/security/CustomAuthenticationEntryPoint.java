@@ -1,24 +1,50 @@
 package com.ous.aethererp.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.context.annotation.Configuration;
+
+import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 
-@Configuration
+@Component
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
+    public void commence(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            AuthenticationException authException
+    ) throws IOException, ServletException {
+
+
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json");
-        response.getWriter().write("{\"authentication\": false,\n" +
-                "\"message\": \"User is not authenticated\"}");
+
+
+        Map<String, Object> errorResponse = new HashMap<>();
+
+        errorResponse.put("timestamp", LocalDateTime.now());
+        errorResponse.put("status", 401);
+        errorResponse.put("error", "Unauthorized");
+        errorResponse.put("message", "User is not authenticated");
+        errorResponse.put("path", request.getRequestURI());
+
+
+        response.getWriter()
+                .write(objectMapper.writeValueAsString(errorResponse));
     }
 }

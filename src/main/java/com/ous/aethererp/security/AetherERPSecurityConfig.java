@@ -34,6 +34,7 @@ public class AetherERPSecurityConfig {
     private final AppUserDetailService userDetailService;
     private final JWTRequestFilter jWTRequestFilter;
     private final CustomAuthenticationEntryPoint authEntryPoint;
+    private final CustomAccessDeniedHandler accessDeniedHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http)  throws Exception{
@@ -60,8 +61,11 @@ public class AetherERPSecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
                 .addFilterBefore(jWTRequestFilter, UsernamePasswordAuthenticationFilter.class)
-                .exceptionHandling(ex -> ex.authenticationEntryPoint(authEntryPoint));
-                return http.build();
+                .exceptionHandling(ex ->
+                        ex.authenticationEntryPoint(authEntryPoint)
+                                .accessDeniedHandler(accessDeniedHandler));
+
+        return http.build();
     }
 
     @Bean
