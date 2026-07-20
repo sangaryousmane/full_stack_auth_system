@@ -4,6 +4,8 @@ package com.ous.aethererp.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "tbl_refresh_tokens")
 @Setter @Getter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -23,7 +25,7 @@ public class RefreshTokenEntity {
      *  Token expiration time
      */
     @Column(nullable = false)
-    private Long expiryDate;
+    private Instant expiryDate;
 
     /**
      *  Whether this token has been revoked
@@ -31,6 +33,36 @@ public class RefreshTokenEntity {
     @Column(nullable = false)
     private Boolean isTokenRevoked;
 
+
+    /**
+     *  Token creation time
+     */
+    private Long createdAt;
+
+    /**
+     *  Last usage of the token
+     */
+    private Long lastUsedAt;
+
+
+    /**
+     * Show Logged in devices
+
+     * ✓ Chrome - Windows
+     * ✓ Safari - iPhone
+     * ✓ Edge - Office Laptop
+     */
+    private String deviceName;
+
+    /**
+     *  Track the device IP address
+     */
+    private String ipAddress;
+
+    /**
+     * The user agent
+     */
+    private String userAgent;
 
     /**
      *  Many refresh tokens can belong to one user.
