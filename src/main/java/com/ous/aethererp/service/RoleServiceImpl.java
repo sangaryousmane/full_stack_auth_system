@@ -48,7 +48,6 @@ public class RoleServiceImpl implements RoleService {
         if(roleById.getName().equals("ROLE_ADMIN")){
             throw new RoleNotFoundException(
                     "Cannot delete default role");
-
         }
         roleRepo.deleteById(roleById.getId());
         log.warning("User Role with ID "+ roleById.getId()+" Deleted Successfully.");

@@ -1,6 +1,7 @@
 package com.ous.aethererp.exceptions;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -73,6 +74,14 @@ public class GlobalExceptionHandler {
     }
 
 
+    // 403
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Object> handleAccessDenied(Exception ex){
+        return buildResponse(
+                HttpStatus.FORBIDDEN,
+                ex.getMessage()
+        );
+    }
 
 
     //500
