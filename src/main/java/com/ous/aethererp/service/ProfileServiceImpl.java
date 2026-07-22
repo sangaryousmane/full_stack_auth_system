@@ -4,6 +4,7 @@ package com.ous.aethererp.service;
 import com.ous.aethererp.RoleConstants;
 import com.ous.aethererp.entity.RoleEntity;
 import com.ous.aethererp.entity.UserEntity;
+import com.ous.aethererp.exceptions.InvalidOTPException;
 import com.ous.aethererp.io.ProfileRequest;
 import com.ous.aethererp.io.ProfileResponse;
 import com.ous.aethererp.io.RoleResponse;
@@ -125,7 +126,7 @@ public class ProfileServiceImpl implements ProfileService{
                 100000, 1000000));
 
         // Calculate expiry time (current time 15 mins in milliseconds)
-        long expiryTime = System.currentTimeMillis() + (24 * 60 * 60 * 1000);
+        long expiryTime = System.currentTimeMillis() + (15 * 60 * 1000);
 
         // Update the profile / user
         existingUser.setVerifyOTP(otp);
@@ -137,7 +138,7 @@ public class ProfileServiceImpl implements ProfileService{
         try{
             emailService.sendOTPEmail(existingUser.getEmail(), otp);
         } catch (Exception e){
-            throw new RuntimeException("Unable to send email ");
+            throw new InvalidOTPException("Unable to send email ");
         }
     }
 
@@ -151,11 +152,11 @@ public class ProfileServiceImpl implements ProfileService{
         if (existingUser.getVerifyOTP() == null ||
                 !existingUser.getVerifyOTP().equals(otp)) {
 
-            throw new RuntimeException("Invalid OTP");
+            throw new InvalidOTPException("Invalid OTP");
         }
 
         if (existingUser.getVerifyExpiredAt() < System.currentTimeMillis()) {
-            throw new RuntimeException("OTP Expired.");
+            throw new InvalidOTPException("OTP Expired.");
         }
 
         existingUser.setIsAccountVerified(true);

@@ -35,6 +35,7 @@ public class JWTRequestFilter extends OncePerRequestFilter {
                 || path.equals("/logout")
                 || path.equals("/send-reset-otp")
                 || path.equals("/reset-password")
+                || path.equals("/refresh-token")
                 || path.startsWith("/swagger-ui")
                 || path.startsWith("/v3/api-docs")
                 || path.startsWith("/swagger-resources")

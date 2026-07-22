@@ -21,6 +21,8 @@ public class JWTUtils {
     @Value("${jwt.secret.key}")
     private String SECRET_KEY;
 
+    private final long ACCESS_TOKEN_VALIDITY = 15 * 60 * 1000; //15 minutes
+
     // Generates a JWT token for a given user
     public String generateToken(UserDetails userDetails){
         // Create an empty claims map (can hold custom data if needed)

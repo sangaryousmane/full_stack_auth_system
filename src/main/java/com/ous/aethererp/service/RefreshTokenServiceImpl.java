@@ -55,7 +55,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 RefreshTokenEntity.builder()
                         .token(token)
                         .expiryDate(System.currentTimeMillis() + REFRESH_TOKEN_VALIDITY)
-                        .isTokenRevoked(false)
+                        .revoked(false)
                         .user(user)
                         .build();
 
@@ -90,7 +90,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public RefreshTokenEntity rotateRefreshToken(String oldToken) {
         RefreshTokenEntity existing = verifyRefreshToken(oldToken);
 
-        existing.setIsTokenRevoked(true);
+        existing.setRevoked(true);
 
         refreshTokenRepo.save(existing);
 
@@ -106,7 +106,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public void revokeRefreshToken(String token) {
         refreshTokenRepo.findByToken(token)
                 .ifPresent(refreshToken -> {
-                    refreshToken.setIsTokenRevoked(true);
+                    refreshToken.setRevoked(true);
                     refreshTokenRepo.save(refreshToken);
                     log.info("Refresh token revoked.");
                 });
@@ -120,7 +120,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public void revokeAllUserTokens(UserEntity user) {
         refreshTokenRepo.findAllByUser(user)
                 .forEach(token -> {
-                    token.setIsTokenRevoked(true);
+                    token.setRevoked(true);
                     refreshTokenRepo.save(token);
                 });
 

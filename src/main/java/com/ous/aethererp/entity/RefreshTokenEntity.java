@@ -4,7 +4,6 @@ package com.ous.aethererp.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.Instant;
 
 @Entity
 @Table(name = "tbl_refresh_tokens")
@@ -25,13 +24,13 @@ public class RefreshTokenEntity {
      *  Token expiration time
      */
     @Column(nullable = false)
-    private Instant expiryDate;
+    private Long expiryDate;
 
     /**
      *  Whether this token has been revoked
      */
     @Column(nullable = false)
-    private Boolean isTokenRevoked;
+    private Boolean revoked = false;
 
 
     /**

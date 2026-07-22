@@ -96,4 +96,16 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(InvalidOTPException.class)
+    public ResponseEntity<?> handleInvalidOTP(
+            InvalidOTPException ex
+    ) {
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of(
+                        "message", ex.getMessage()
+                ));
+    }
+
 }
