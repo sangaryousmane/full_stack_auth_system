@@ -45,6 +45,9 @@ public class UserEntity {
     @UpdateTimestamp
     private Timestamp updatedAt; // Tracks the last modification time.
 
+    @Column(name = "profile_picture_url")
+    private String profilePictureUrl;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "tbl_user_roles",
