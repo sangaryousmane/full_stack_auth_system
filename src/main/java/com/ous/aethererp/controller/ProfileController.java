@@ -3,6 +3,7 @@ package com.ous.aethererp.controller;
 import com.ous.aethererp.config.OpenApiConfig;
 import com.ous.aethererp.io.ProfileRequest;
 import com.ous.aethererp.io.ProfileResponse;
+import com.ous.aethererp.io.ResetPasswordRequest;
 import com.ous.aethererp.io.UpdateProfileRequest;
 import com.ous.aethererp.service.EmailService;
 import com.ous.aethererp.service.ProfileService;
@@ -72,12 +73,27 @@ public class ProfileController {
                 "All active sessions have been revoked."));
     }
 
+    @DeleteMapping
     public ResponseEntity<?> deleteAccount(
             @CurrentSecurityContext(expression = "authentication?.name") String email){
         profileService.deleteAccount(email);
         return ResponseEntity.ok(Map.of(
                 "message",
                 "Account deleted successfully."));
+    }
+
+    // Helper API to change user password
+    @PutMapping("/password")
+    public ResponseEntity<?> changePassword(
+
+            @CurrentSecurityContext(expression = "authentication?.name") String email,
+            @Valid @RequestBody ResetPasswordRequest request) {
+        profileService.changePassword(email, request);
+
+        return ResponseEntity.ok(Map.of(
+                        "message",
+                        "Password changed successfully.")
+        );
     }
 
 }

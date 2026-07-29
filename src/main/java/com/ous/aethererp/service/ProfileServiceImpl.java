@@ -5,10 +5,7 @@ import com.ous.aethererp.RoleConstants;
 import com.ous.aethererp.entity.RoleEntity;
 import com.ous.aethererp.entity.UserEntity;
 import com.ous.aethererp.exceptions.InvalidOTPException;
-import com.ous.aethererp.io.ProfileRequest;
-import com.ous.aethererp.io.ProfileResponse;
-import com.ous.aethererp.io.RoleResponse;
-import com.ous.aethererp.io.UpdateProfileRequest;
+import com.ous.aethererp.io.*;
 import com.ous.aethererp.repo.RefreshTokenRepository;
 import com.ous.aethererp.repo.RoleRepository;
 import com.ous.aethererp.repo.UserEntityRepository;
@@ -299,6 +296,63 @@ public class ProfileServiceImpl implements ProfileService{
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
         refreshTokenRepo.revokeAllByUser(user);
+    }
+
+
+    @Override
+    public void changePassword(
+            String email,
+            ResetPasswordRequest request
+    ) {
+
+        if (!request.getNewPassword()
+                .equals(request.getConfirmPassword())) {
+
+            throw new IllegalArgumentException(
+                    "New passwords do not match."
+            );
+        }
+
+
+        UserEntity user =
+                userRepo.findByEmail(email)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "User not found"
+                                )
+                        );
+
+
+        if (!passwordEncoder.matches(
+                request.getCurrentPassword(),
+                user.getPassword()
+        )) {
+
+            throw new IllegalArgumentException(
+                    "Current password is incorrect."
+            );
+        }
+
+
+        if (passwordEncoder.matches(
+                request.getNewPassword(),
+                user.getPassword()
+        )) {
+
+            throw new IllegalArgumentException(
+                    "New password must be different from your current password."
+            );
+        }
+
+
+        user.setPassword(
+                passwordEncoder.encode(
+                        request.getNewPassword()
+                )
+        );
+
+
+        userRepo.save(user);
     }
 
 
