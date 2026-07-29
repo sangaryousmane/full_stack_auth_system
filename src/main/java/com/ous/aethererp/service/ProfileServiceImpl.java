@@ -146,24 +146,52 @@ public class ProfileServiceImpl implements ProfileService{
     public void verifyOTP(String email, String otp) {
 
         UserEntity existingUser = userRepo.findByEmail(email)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException("User not found: " + email));
+                .orElseThrow(() -> new UsernameNotFoundException(
+                                "User not found: " + email));
 
-        if (existingUser.getVerifyOTP() == null ||
-                !existingUser.getVerifyOTP().equals(otp)) {
+        System.out.println("=================================");
+        System.out.println("OTP VERIFICATION");
+        System.out.println("Email: " + email);
+        System.out.println("Submitted OTP: " + otp);
+        System.out.println("Stored OTP: " + existingUser.getVerifyOTP());
+        System.out.println("Stored Expiry: " + existingUser.getVerifyExpiredAt());
+        System.out.println("Current Time: " + System.currentTimeMillis());
+        System.out.println("=================================");
 
-            throw new InvalidOTPException("Invalid OTP");
+        // Check if an OTP exists
+        if (existingUser.getVerifyOTP() == null) {
+            throw new InvalidOTPException("No verification OTP found. Please request a new OTP.");
         }
 
-        if (existingUser.getVerifyExpiredAt() < System.currentTimeMillis()) {
-            throw new InvalidOTPException("OTP Expired.");
+        // Check if the OTP has expired
+        if (existingUser.getVerifyExpiredAt() == null ||
+                existingUser.getVerifyExpiredAt() <= System.currentTimeMillis()) {
+
+            throw new InvalidOTPException("OTP has expired. Please request a new OTP.");
         }
 
+        // Check if the OTP matches
+        if (!existingUser.getVerifyOTP().equals(otp)) {
+
+            System.out.println("OTP MISMATCH");
+            System.out.println("Expected: " + existingUser.getVerifyOTP());
+            System.out.println("Received: " + otp);
+
+            throw new InvalidOTPException("Invalid OTP.");
+        }
+
+        // Verify account
         existingUser.setIsAccountVerified(true);
+
+        // Clear OTP after successful verification
         existingUser.setVerifyOTP(null);
-        existingUser.setVerifyExpiredAt(0L);
+
+        // Clear OTP expiry
+        existingUser.setVerifyExpiredAt(null);
 
         userRepo.save(existingUser);
+
+        System.out.println("EMAIL VERIFIED SUCCESSFULLY");
     }
 
     @Override

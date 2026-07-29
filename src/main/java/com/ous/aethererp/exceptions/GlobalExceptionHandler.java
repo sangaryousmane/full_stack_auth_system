@@ -21,7 +21,7 @@ public class GlobalExceptionHandler {
 
         Map<String,Object> body = new HashMap<>();
 
-        body.put("timestamp", LocalDateTime.now());
+        body.put("timestamp", LocalDateTime.now().toString());
         body.put("status", status.value());
         body.put("error", status.getReasonPhrase());
         body.put("message", message);
@@ -101,11 +101,10 @@ public class GlobalExceptionHandler {
             InvalidOTPException ex
     ) {
 
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(Map.of(
-                        "message", ex.getMessage()
-                ));
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                "Bad Request"
+        );
     }
 
 }

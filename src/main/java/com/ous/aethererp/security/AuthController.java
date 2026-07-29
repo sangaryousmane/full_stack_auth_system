@@ -159,22 +159,38 @@ public class AuthController {
         }
     }
 
-//    @PreAuthorize("isAuthenticated()")
-    @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping("/verify-otp")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<?> verifyEmail(
             @RequestBody Map<String, Object> request,
             Authentication authentication) {
 
-        System.out.println(authentication);
-        if(authentication == null){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("User is not authenticated.");
+        if (authentication == null ||
+                !authentication.isAuthenticated()) {
+
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User is not authenticated."));
         }
 
         String email = authentication.getName();
-        profileService.verifyOTP(email, request.get("otp").toString());
-        return ResponseEntity.ok().build();
+
+        String otp = request.get("otp") != null
+                ? request.get("otp").toString().trim()
+                : null;
+
+        if (otp == null || !otp.matches("\\d{6}")) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("message", "A valid 6-digit OTP is required."));
+        }
+
+        profileService.verifyOTP(email, otp);
+
+        return ResponseEntity.ok(
+                Map.of("message", "Email verified successfully.")
+        );
     }
 
 

@@ -40,7 +40,7 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 
         Map<String,Object> error = new HashMap<>();
 
-        error.put("timestamp", LocalDateTime.now());
+        error.put("timestamp", LocalDateTime.now().toString());
         error.put("status",403);
         error.put("error","Forbidden");
         error.put("message","You don't have permission to access this resource");
