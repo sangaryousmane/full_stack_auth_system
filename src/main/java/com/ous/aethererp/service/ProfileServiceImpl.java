@@ -278,7 +278,9 @@ public class ProfileServiceImpl implements ProfileService{
     }
 
     @Override
+    @Transactional
     public void deleteAccount(String email) {
+
         UserEntity user =
                 userRepo.findByEmail(email)
                         .orElseThrow(() ->
@@ -286,7 +288,18 @@ public class ProfileServiceImpl implements ProfileService{
                                         "User not found"
                                 )
                         );
-        refreshTokenRepo.deleteAllByUser(user);
+
+
+        // Delete refresh tokens first
+        refreshTokenRepo
+                .deleteAllByUser(user);
+
+
+        // Delete user-role join records
+        roleRepo.deleteUserRoles(user.getId());
+
+
+        // Delete user
         userRepo.delete(user);
     }
 
@@ -379,6 +392,7 @@ public class ProfileServiceImpl implements ProfileService{
                 .email(newProfile.getEmail())
                 .isAccountVerified(newProfile.getIsAccountVerified())
                 .roles(roles)
+                .profilePictureUrl(newProfile.getProfilePictureUrl())
                 .build();
     }
 

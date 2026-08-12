@@ -1,10 +1,7 @@
 package com.ous.aethererp.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.sql.Timestamp;
@@ -13,9 +10,8 @@ import java.util.Set;
 
 
 @Entity
-@Data
+@Getter @Setter
 @Builder
-@RequiredArgsConstructor
 @Table(name = "tbl_users")
 @AllArgsConstructor
 public class UserEntity {
@@ -54,5 +50,7 @@ public class UserEntity {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
-    private Set<RoleEntity> roles=new HashSet<>();
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<RoleEntity> roles = new HashSet<>();
 }

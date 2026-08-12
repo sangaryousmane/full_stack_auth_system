@@ -1,6 +1,4 @@
 package com.ous.aethererp.security;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,8 +18,6 @@ import java.util.Map;
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
 
     @Override
     public void commence(
@@ -38,13 +34,9 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
         Map<String, Object> errorResponse = new HashMap<>();
 
         errorResponse.put("timestamp", LocalDateTime.now());
-        errorResponse.put("status", 401);
+        errorResponse.put("status", HttpServletResponse.SC_UNAUTHORIZED);
         errorResponse.put("error", "Unauthorized");
         errorResponse.put("message", "User is not authenticated");
         errorResponse.put("path", request.getRequestURI());
-
-
-        response.getWriter()
-                .write(objectMapper.writeValueAsString(errorResponse));
     }
 }

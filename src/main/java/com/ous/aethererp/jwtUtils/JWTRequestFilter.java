@@ -71,16 +71,20 @@ public class JWTRequestFilter extends OncePerRequestFilter {
         // 3. Validate the token and set security context
 
         if (jwt != null) {
-            email = jwtUtils.extractEmail(jwt);
-            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = appUserDetail.loadUserByUsername(email);
-                if (jwtUtils.validateToken(jwt, userDetails)) {
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(userDetails,
-                                    null, userDetails.getAuthorities());
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+            try {
+                email = jwtUtils.extractEmail(jwt);
+                if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    UserDetails userDetails = appUserDetail.loadUserByUsername(email);
+                    if (jwtUtils.validateToken(jwt, userDetails)) {
+                        UsernamePasswordAuthenticationToken authToken =
+                                new UsernamePasswordAuthenticationToken(userDetails,
+                                        null, userDetails.getAuthorities());
+                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    }
                 }
+            }catch (Exception ex) {
+                SecurityContextHolder.clearContext();
             }
         }
         filterChain.doFilter(request, response);
