@@ -26,17 +26,6 @@ import java.util.Map;
 public class ProfileController {
 
     private final ProfileService profileService;
-    private final EmailService emailService;
-
-    @PostMapping("/register")
-    @ResponseStatus(HttpStatus.CREATED)
-    public ProfileResponse register(@Valid @RequestBody ProfileRequest request){
-        ProfileResponse profile = profileService.createProfile(request);
-
-        // Send email
-        emailService.sendWelcomeEmail(profile.getEmail(), profile.getName());
-        return profile;
-    }
 
     @GetMapping
     public ProfileResponse getProfileDetails(
