@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class ProfileServiceImpl implements ProfileService{
+public class ProfileServiceImpl implements ProfileService {
 
     private final UserEntityRepository userRepo;
     private final PasswordEncoder passwordEncoder;
@@ -72,7 +72,7 @@ public class ProfileServiceImpl implements ProfileService{
     public ProfileResponse getProfile(String email) {
         UserEntity existingUserProfile = userRepo.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found " + email));
-    return convertToProfileResponse(existingUserProfile);
+        return convertToProfileResponse(existingUserProfile);
     }
 
     @Override
@@ -94,41 +94,47 @@ public class ProfileServiceImpl implements ProfileService{
         // Save the data into the database
         userRepo.save(existingUserByEmail);
 
-        try{
+        try {
             emailService.sendResetOTPEmail(existingUserByEmail.getEmail(), otp);
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new RuntimeException("Unable to send email.");
         }
     }
 
     @Override
-    public void resetPassword(String email, String otp, String newPassword) {
-       UserEntity existingUser= userRepo.findByEmail(email)
-               .orElseThrow(() -> new UsernameNotFoundException("User email not found: " + email));
+    public void resetPassword(
+            String email,
+            String otp,
+            String newPassword) {
 
-       // Check if the otp is null or the existing otp is not equal to the provided one
-        if (existingUser.getResetPasswordOTP() == null || !existingUser.getResetPasswordOTP().equals(otp)){
-            throw new RuntimeException("Invalid OTP");
+        UserEntity existingUser = userRepo.findByEmail(email).orElseThrow(() ->
+                new UsernameNotFoundException("User email not found: " + email));
+
+        Long expiry = existingUser.getResetPasswordOTPExpiredAt();
+        if (existingUser.getResetPasswordOTP() == null) {
+            throw new RuntimeException("No reset OTP found.");
         }
 
-        if (existingUser.getResetPasswordOTPExpiredAt() < System.currentTimeMillis()){
-            throw new RuntimeException("OTP Expired.");
+        if (expiry == null || expiry < System.currentTimeMillis()) {
+            throw new RuntimeException("OTP expired.");
+        }
+
+        if (!existingUser.getResetPasswordOTP().equals(otp)) {
+            throw new RuntimeException("Invalid OTP.");
         }
 
         existingUser.setPassword(passwordEncoder.encode(newPassword));
         existingUser.setResetPasswordOTP(null);
         existingUser.setResetPasswordOTPExpiredAt(0L);
-
-        // resave user back to the database
         userRepo.save(existingUser);
     }
 
     @Override
     public void sendOTP(String email) {
         UserEntity existingUser = userRepo.findByEmail(email)
-                .orElseThrow(()  -> new UsernameNotFoundException("User not found: "+ email));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
-        if (existingUser.getIsAccountVerified() != null && existingUser.getIsAccountVerified()){
+        if (existingUser.getIsAccountVerified() != null && existingUser.getIsAccountVerified()) {
             return;
         }
 
@@ -146,9 +152,9 @@ public class ProfileServiceImpl implements ProfileService{
         // Save the data into the database
         userRepo.save(existingUser);
 
-        try{
+        try {
             emailService.sendOTPEmail(existingUser.getEmail(), otp);
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new InvalidOTPException("Unable to send email ");
         }
     }
@@ -158,7 +164,7 @@ public class ProfileServiceImpl implements ProfileService{
 
         UserEntity existingUser = userRepo.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException(
-                                "User not found: " + email));
+                        "User not found: " + email));
 
         System.out.println("=================================");
         System.out.println("OTP VERIFICATION");
@@ -207,7 +213,7 @@ public class ProfileServiceImpl implements ProfileService{
 
     @Override
     public String getLoggedInUserId(String email) {
-       UserEntity existingUser = userRepo.findByEmail(email)
+        UserEntity existingUser = userRepo.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User Email Not Found"));
 
         return existingUser.getUserId();
@@ -219,14 +225,14 @@ public class ProfileServiceImpl implements ProfileService{
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         String newEmail = request.getEmail().trim().toLowerCase();
-        if (!currentEmail.equalsIgnoreCase(newEmail) && userRepo.existsByEmail(newEmail)){
+        if (!currentEmail.equalsIgnoreCase(newEmail) && userRepo.existsByEmail(newEmail)) {
             throw new RuntimeException(
                     "Email address is already in use."
             );
         }
         user.setName(request.getName().trim());
         user.setEmail(newEmail);
-        return convertToProfileResponse( userRepo.save(user));
+        return convertToProfileResponse(userRepo.save(user));
     }
 
     @Override
@@ -246,8 +252,8 @@ public class ProfileServiceImpl implements ProfileService{
             throw new IllegalArgumentException("Only image files are allowed.");
         }
         UserEntity user = userRepo.findByEmail(email).orElseThrow(() ->
-                                new RuntimeException(
-                                        "User not found"));
+                new RuntimeException(
+                        "User not found"));
         try {
             Files.createDirectories(uploadDirectory);
             String extension = getFileExtension(file.getOriginalFilename());
@@ -346,7 +352,6 @@ public class ProfileServiceImpl implements ProfileService{
             );
         }
 
-
         if (passwordEncoder.matches(
                 request.getNewPassword(),
                 user.getPassword()
@@ -357,14 +362,8 @@ public class ProfileServiceImpl implements ProfileService{
             );
         }
 
-
-        user.setPassword(
-                passwordEncoder.encode(
-                        request.getNewPassword()
-                )
-        );
-
-
+        String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+        user.setPassword(encodedPassword);
         userRepo.save(user);
     }
 
@@ -378,13 +377,13 @@ public class ProfileServiceImpl implements ProfileService{
 
     // TODO: This method takes a database entity and convert it back into a restful response to reduce load and frequent requests on the database.
     private ProfileResponse convertToProfileResponse(UserEntity newProfile) {
-        Set<RoleResponse> roles=newProfile.getRoles()
+        Set<RoleResponse> roles = newProfile.getRoles()
                 .stream()
                 .map(role -> RoleResponse.builder()
-                                .id(role.getId())
-                                .name(role.getName())
-                                .roleId(role.getRoleId())
-                                .build())
+                        .id(role.getId())
+                        .name(role.getName())
+                        .roleId(role.getRoleId())
+                        .build())
                 .collect(Collectors.toSet());
         return ProfileResponse.builder()
                 .userId(newProfile.getUserId())
@@ -398,17 +397,17 @@ public class ProfileServiceImpl implements ProfileService{
 
     // TODO: This method takes a restful request and turn it back to a database entity
     private UserEntity convertToUserEntity(ProfileRequest request) {
-         return UserEntity.builder()
+        return UserEntity.builder()
                 .email(request.getEmail())
                 .userId(UUID.randomUUID().toString())
                 .name(request.getName())
                 .password(passwordEncoder.encode(request.getPassword()))
-                 .isAccountVerified(false)
-                 .resetPasswordOTPExpiredAt(0L)
-                 .verifyOTP(null)
-                 .verifyExpiredAt(0L)
-                 .resetPasswordOTP(null)
-                 .roles(new HashSet<>())
-                 .build();
+                .isAccountVerified(false)
+                .resetPasswordOTPExpiredAt(0L)
+                .verifyOTP(null)
+                .verifyExpiredAt(0L)
+                .resetPasswordOTP(null)
+                .roles(new HashSet<>())
+                .build();
     }
 }

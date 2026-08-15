@@ -53,4 +53,6 @@ public class UserEntity {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<RoleEntity> roles = new HashSet<>();
+
+    public UserEntity() {}
 }

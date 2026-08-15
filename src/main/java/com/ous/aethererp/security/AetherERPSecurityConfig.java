@@ -45,7 +45,7 @@ public class AetherERPSecurityConfig {
                         auth -> auth.requestMatchers(
                                 "/register", "/login",
                                 "/send-reset-otp", "/reset-password", "/error",
-                                        "/logout", "/refresh-token").permitAll()
+                                        "/logout", "/refresh-token", "/is-authenticated").permitAll()
                                 .requestMatchers(
                                         HttpMethod.OPTIONS,
                                         "/**"

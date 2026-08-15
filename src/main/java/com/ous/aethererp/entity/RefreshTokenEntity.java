@@ -70,4 +70,9 @@ public class RefreshTokenEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private UserEntity user;
+
+
+    public boolean isRevoked(){
+        return revoked;
+    }
 }

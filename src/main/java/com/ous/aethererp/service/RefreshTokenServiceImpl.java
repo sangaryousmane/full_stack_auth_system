@@ -73,7 +73,11 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public RefreshTokenEntity verifyRefreshToken(String token) {
         RefreshTokenEntity refreshToken=
                 refreshTokenRepo.findByToken(token)
-                        .orElseThrow(() -> new RuntimeException("Refresh token not found."));
+                        .orElseThrow(() -> new RuntimeException("Refresh token not found"));
+
+        if (refreshToken.isRevoked()){
+            throw new RuntimeException("Refresh token has been revoked.");
+        }
 
         if (refreshToken.getExpiryDate() < System.currentTimeMillis()){
             refreshTokenRepo.delete(refreshToken);

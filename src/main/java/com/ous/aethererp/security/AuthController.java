@@ -4,13 +4,11 @@ package com.ous.aethererp.security;
 import com.ous.aethererp.entity.RefreshTokenEntity;
 import com.ous.aethererp.entity.RoleEntity;
 import com.ous.aethererp.entity.UserEntity;
-import com.ous.aethererp.io.AuthRequest;
-import com.ous.aethererp.io.AuthResponse;
-import com.ous.aethererp.io.ResetPasswordRequest;
+import com.ous.aethererp.io.*;
 import com.ous.aethererp.repo.UserEntityRepository;
+import com.ous.aethererp.service.EmailService;
 import com.ous.aethererp.service.ProfileService;
 import com.ous.aethererp.jwtUtils.JWTUtils;
-import com.ous.aethererp.service.RefreshTokenService;
 import com.ous.aethererp.service.RefreshTokenServiceImpl;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.Cookie;
@@ -21,16 +19,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.*;
 import org.springframework.security.core.annotation.CurrentSecurityContext;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.core.Authentication;
+
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,7 +46,17 @@ public class AuthController {
     private final ProfileService profileService;
     private final RefreshTokenServiceImpl refreshTokenService;
     private final UserEntityRepository userRepo;
+    private final EmailService emailService;
 
+    @PostMapping("/register")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ProfileResponse register(@Valid @RequestBody ProfileRequest request) {
+        ProfileResponse profile = profileService.createProfile(request);
+
+        // Send email
+        emailService.sendWelcomeEmail(profile.getEmail(), profile.getName());
+        return profile;
+    }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request) {
@@ -66,10 +72,9 @@ public class AuthController {
                     .sameSite("Strict").build();
 
 
-            UserEntity user =
-                    userRepo.findByEmail(request.getEmail())
-                            .orElseThrow(() ->
-                                    new UsernameNotFoundException("User not found."));
+            UserEntity user = userRepo.findByEmail(request.getEmail())
+                    .orElseThrow(() ->
+                            new UsernameNotFoundException("User not found."));
             RefreshTokenEntity refreshToken = refreshTokenService.createRefreshToken(user);
 
 
@@ -87,17 +92,15 @@ public class AuthController {
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                     .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-                    .body(
-                            AuthResponse.builder()
-                                    .email(user.getEmail())
-                                    .name(user.getName())
-                                    .authenticated(true)
-                                    .roles(
-                                            user.getRoles()
-                                                    .stream()
-                                                    .map(RoleEntity::getName)
-                                                    .toList()
-                                    ).build()
+                    .body(AuthResponse.builder()
+                            .email(user.getEmail())
+                            .name(user.getName())
+                            .authenticated(true)
+                            .roles(user.getRoles()
+                                    .stream()
+                                    .map(RoleEntity::getName)
+                                    .toList()
+                            ).build()
                     );
 
         } catch (BadCredentialsException ex) {
@@ -111,50 +114,68 @@ public class AuthController {
             err.put("message", "Account is disabled.");
             return ResponseEntity.status(UNAUTHORIZED).body(err);
         } catch (Exception ex) {
+            log.error("LOGIN FAILED", ex);
             Map<String, Object> err = new HashMap<>();
             err.put("error", true);
-            err.put("message", "Authentication failed.");
-            return ResponseEntity.status(UNAUTHORIZED).body(err);
+            err.put("message", ex.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(err);
         }
     }
 
-    @PreAuthorize("isAuthenticated()")
     @GetMapping("/is-authenticated")
     public ResponseEntity<Boolean> isAuthenticated(
-            Authentication authentication){
-        return ResponseEntity.ok(authentication != null && authentication.isAuthenticated());
+            Authentication authentication) {
+        boolean isAuthenticated = authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken);
+        return ResponseEntity.ok(isAuthenticated);
     }
 
-    @PreAuthorize("isAuthenticated()")
     @PostMapping("/send-reset-otp")
-    public void sendResetOTP(@RequestParam String email){
+    public void sendResetOTP(@RequestParam String email) {
         try {
             profileService.resetPasswordOTP(email);
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 
 
     @PostMapping("/reset-password")
-    public void sendResetPassword(
-            @Valid @RequestBody ResetPasswordRequest request){
-        try{
+    public ResponseEntity<?> sendResetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("Passwords do not match.");
+        }
+        try {
             profileService.resetPassword(request.getEmail(),
-                    request.getResetPasswordOTP(), request.getNewPassword());
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+                    request.getResetPasswordOTP(),
+                    request.getNewPassword());
+            return ResponseEntity.ok("Password reset successfully.");
+
+        } catch (UsernameNotFoundException e) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(e.getMessage());
         }
     }
-
     @SecurityRequirement(name = "Bearer Authentication")
 //    @PreAuthorize("isAuthenticated()")
     @PostMapping("/send-otp")
-    public void sendVerifyOTP(@CurrentSecurityContext(expression = "authentication?.name") String email){
+    public void sendVerifyOTP(@CurrentSecurityContext(expression = "authentication?.name") String email) {
 
         try {
             profileService.sendOTP(email);
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new ResponseStatusException(INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
@@ -195,13 +216,15 @@ public class AuthController {
 
 
     private void authenticate(String email, String password) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(email, password)
+        );
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletResponse response){
+    public ResponseEntity<?> logout(HttpServletResponse response) {
         log.info("Logging out now.......");
-        ResponseCookie cookie= ResponseCookie.from("jwt", "")
+        ResponseCookie cookie = ResponseCookie.from("jwt", "")
                 .httpOnly(true)
                 .secure(false)
                 .path("/")
@@ -229,44 +252,57 @@ public class AuthController {
             for (Cookie cookie : cookies) {
 
                 if ("refresh_token".equals(cookie.getName())) {
+
                     refreshToken = cookie.getValue();
+
                     break;
                 }
             }
         }
 
-        if (refreshToken == null || refreshToken.isBlank()) {
+        if (refreshToken == null ||
+                refreshToken.isBlank()) {
 
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .body("Refresh token missing.");
         }
 
-        RefreshTokenEntity token =
-                refreshTokenService
-                        .rotateRefreshToken(refreshToken);
+        try {
 
-        UserDetails userDetails =
-                appUserDetailService
-                        .loadUserByUsername(
-                                token.getUser().getEmail()
-                        );
+            RefreshTokenEntity token =
+                    refreshTokenService
+                            .rotateRefreshToken(refreshToken);
 
-        String newAccessToken =
-                jwtUtils.generateToken(userDetails);
+            UserDetails userDetails =
+                    appUserDetailService
+                            .loadUserByUsername(
+                                    token.getUser().getEmail()
+                            );
 
-        addAccessCookie(
-                response,
-                newAccessToken
-        );
+            String newAccessToken =
+                    jwtUtils.generateToken(userDetails);
 
-        addRefreshCookie(
-                response,
-                token.getToken()
-        );
+            addAccessCookie(
+                    response,
+                    newAccessToken
+            );
 
-        return ResponseEntity.ok(
-                "Token refreshed successfully.");
+            addRefreshCookie(
+                    response,
+                    token.getToken()
+            );
+
+            return ResponseEntity.ok(
+                    "Token refreshed successfully."
+            );
+
+        } catch (RuntimeException ex) {
+
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(ex.getMessage());
+        }
     }
 
     private void addRefreshCookie(
