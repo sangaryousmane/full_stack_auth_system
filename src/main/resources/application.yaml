@@ -1,11 +1,13 @@
 spring:
+  config:
+    import: optional:configtree:/run/secrets/
   application:
     name: Aether Entity Relationship Planning
 
   datasource:
-    username: root
-    password: Sangary2026&!.
-    url: jdbc:mysql://localhost:3306/aethererpdb?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${mysql_username}
+    password: ${mysql_password} # Sangary2026&!.
+    url: jdbc:mysql://mysql:3306/aethererpdb?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
