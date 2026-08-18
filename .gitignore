@@ -32,6 +32,10 @@ build/
 ### VS Code ###
 .vscode/
 
+### docker compose secrets
+
+/secrets/
+
 # Node
 node_modules/
 

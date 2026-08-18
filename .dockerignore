@@ -1,0 +1,14 @@
+.git
+.github
+.idea
+.vscode
+
+target/
+*.log
+
+node_modules/
+
+README.md
+
+.env
+.env.*

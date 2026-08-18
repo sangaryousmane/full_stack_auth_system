@@ -1,0 +1,92 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: aethererp-mysql
+    restart: unless-stopped
+
+    environment:
+      MYSQL_DATABASE: aethererpdb
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+      MYSQL_USER_FILE: /run/secrets/mysql_username
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
+
+    ports:
+      - "3306:3306"
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+    networks:
+      - aethererp-network
+
+    secrets:
+      - mysql_root_password
+      - mysql_username
+      - mysql_password
+
+    healthcheck:
+      test: [
+        "CMD",
+        "mysqladmin",
+        "ping",
+        "-h",
+        "localhost",
+        "-u",
+        "root",
+        "--password=$$(cat /run/secrets/mysql_r10s
+                                                     timeout: 5s
+                                                     retriesoot_password)"]
+      interval: : 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: aethererp-app
+    restart: unless-stopped
+
+    ports:
+      - "8080:8080"
+
+    networks:
+      - aethererp-network
+
+    secrets:
+      - mysql_password
+      - mysql_username
+
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/aethererpdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME_FILE: /run/secrets/mysql_username
+      SPRING_DATASOURCE_PASSWORD_FILE: /run/secrets/mysql_password
+
+      #JPA / Hibernate
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "true"
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+## Docker secrets
+secrets:
+  mysql_root_password:
+    file: ./secrets/mysql_root_password.txt
+
+  mysql_username:
+    file: ./secrets/mysql_username.txt
+
+  mysql_password:
+    file: ./secrets/mysql_password.txt
+
+
+volumes:
+  mysql_data:
+    name: aethererp-mysql-data
+
+networks:
+  aethererp-network:
+    name: aethererp-network
+    driver: bridge
